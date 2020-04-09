@@ -80,6 +80,9 @@ typedef struct {
     const char *clientkey_buf;
     size_t clientkey_bytes;
     const struct psk_key_hint *psk_hint_key;
+#ifdef CONFIG_ESP_TLS_USE_HSM
+    bool use_hsm;
+#endif
 } mqtt_config_storage_t;
 
 typedef enum {
@@ -205,6 +208,9 @@ static esp_err_t esp_mqtt_set_ssl_transport_properties(esp_transport_list_handle
                      goto esp_mqtt_set_transport_failed);
     }
 
+#ifdef CONFIG_ESP_TLS_USE_HSM
+    esp_transport_ssl_use_hsm(ssl);
+#else
     ESP_OK_CHECK(TAG, esp_mqtt_set_cert_key_data(ssl, MQTT_SSL_DATA_API_CLIENT_CERT, cfg->clientcert_buf, cfg->clientcert_bytes),
                  goto esp_mqtt_set_transport_failed);
     ESP_OK_CHECK(TAG, esp_mqtt_set_cert_key_data(ssl, MQTT_SSL_DATA_API_CLIENT_KEY, cfg->clientkey_buf, cfg->clientkey_bytes),
@@ -220,6 +226,7 @@ static esp_err_t esp_mqtt_set_ssl_transport_properties(esp_transport_list_handle
         goto esp_mqtt_set_transport_failed;
 #endif
     }
+#endif /* CONFIG_ESP_TLS_USE_HSM */
 
     if (cfg->psk_hint_key) {
 #if defined(MQTT_SUPPORTED_FEATURE_PSK_AUTHENTICATION) && MQTT_ENABLE_SSL
